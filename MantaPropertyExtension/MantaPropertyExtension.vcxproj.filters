@@ -12,6 +12,9 @@
     <Filter Include="Export Definition">
       <UniqueIdentifier>{e7acec98-fdee-4d50-9bad-b6b95f614019}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{4780f478-831d-41a1-b3e8-83c65efd2f9e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PropertyExtension.h">

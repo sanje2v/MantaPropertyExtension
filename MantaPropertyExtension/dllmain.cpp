@@ -28,11 +28,13 @@ WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
 #include <Windows.h>
 #include <Guiddef.h>
+#include <strsafe.h>
 #include "ClassFactory.h"           // For the class factory
 #include "Reg.h"
 
 
 // {4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}
+#define CLSID_MANTAPROPERTYEXTENSION		L"{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
 static const CLSID CLSID_MantaPropertyExtension =
 { 0x4cc940b1, 0xab1b, 0x40aa, { 0x99, 0xe3, 0xb9, 0x74, 0xfd, 0x2b, 0xe, 0xc4 } };
 
@@ -109,7 +111,7 @@ STDAPI DllCanUnloadNow(void)
 //
 //   FUNCTION: DllRegisterServer
 //
-//   PURPOSE: Register the COM server and the property sheet handler.
+//   PURPOSE: Register the COM server and the property handler.
 // 
 STDAPI DllRegisterServer(void)
 {
@@ -127,6 +129,23 @@ STDAPI DllRegisterServer(void)
 								L"MantaPropertyExtension.PropertyHandler Class", 
 								L"Apartment");
 
+	// After proper entries have been made to 'HKEY_CLASSES_ROOT\CLSID',
+	// also add a DWORD value named 'DisableProcessIsolation' under this
+	// component's CLSID key. This is required for implementinf 'IInitializeWithFile'
+	// inherited in 'PropertyExtension' class
+	if (SUCCEEDED(hr))
+	{
+		HKEY hkeyCLSID;
+
+		hr = RegOpenKeyEx(HKEY_CLASSES_ROOT, L"CLSID\\" CLSID_MANTAPROPERTYEXTENSION, 0, KEY_WRITE, &hkeyCLSID);
+		if (FAILED(hr))
+			return hr;
+		
+		const DWORD DisableProcessIsolation = 1;
+		hr = RegSetValueEx(hkeyCLSID, L"DisableProcessIsolation", 0, REG_DWORD, (const BYTE *) &DisableProcessIsolation, sizeof(DisableProcessIsolation));
+		RegCloseKey(hkeyCLSID);
+	}
+
     return hr;
 }
 
@@ -134,7 +153,7 @@ STDAPI DllRegisterServer(void)
 //
 //   FUNCTION: DllUnregisterServer
 //
-//   PURPOSE: Unregister the COM server and the property sheet handler.
+//   PURPOSE: Unregister the COM server and the property handler.
 // 
 STDAPI DllUnregisterServer(void)
 {
