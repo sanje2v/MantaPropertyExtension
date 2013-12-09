@@ -1,14 +1,14 @@
 ; Script for installing 'MantaPropertyExtension'
 
 #define AppName         "Manta Property Extension"
-#define AppVersion      "1.0"
+;#define AppVersion      1.0
 #define AppPublisher    "Sanjeev Sharma"
 #define AppURL          "http://sanje2v.wordpress.com/"
 #define AppComments     "Installer for Manta Property Extension v1.0"
 #define COM_CLSID       "{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}}"
-#define DEBUG
+;#define DEBUG
 
-#define X86
+;#define X86
 #ifndef X86
 #define X64
 #endif
@@ -17,7 +17,8 @@
 [Setup]
 AppId={{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}}
 AppName={#AppName}
-AppVersion={#AppVersion}
+AppVersion=1.0
+VersionInfoVersion=1.0.0.0
 AppPublisher={#AppPublisher}
 AppPublisherURL={#AppURL}
 AppSupportURL={#AppURL}
@@ -25,6 +26,8 @@ AppComments={#AppComments}
 CreateAppDir=no
 Compression=lzma
 SolidCompression=yes
+; No sure whether the following applies to property handlers
+ChangesAssociations=yes
 ; This setup requires administrative privileges
 PrivilegesRequired=admin
 ; Minimum OS version is Windows Vista
@@ -157,6 +160,11 @@ begin
 
 #ifdef X86
   if IsWin64() then begin
+    Msgbox('This installer is meant for 32-bit systems. Please download the installer meant for 64-bit architecture.', mbCriticalError, MB_OK);
+    Result := false;
+  end else
+#else
+  if not IsWin64() then begin
     Msgbox('This installer is meant for 64-bit systems. Please download the installer meant for 32-bit architecture.', mbCriticalError, MB_OK);
     Result := false;
   end else
@@ -206,7 +214,7 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then begin
-    Msgbox('The process Windows Explorer and/or Windows Search service will need to be restart for this extension to take over. Either restart them or restart your computer.', mbInformation, MB_OK);
+    Msgbox('Windows Explorer and/or Windows Search service will need to be restarted for this extension to take over. Either restart them manually or restart your computer.', mbInformation, MB_OK);
   end
 end;
 
