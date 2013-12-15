@@ -3,30 +3,87 @@
 #include <algorithm>
 #include <memory>
 
-
 using namespace std;
 using namespace ATL;
 
 
-const PropertyExtension::KEY_FUNCVALUE PropertyExtension::m_KeyfuncValue[NUM_OF_ADDED_PROPERTIES] = 
+static CLSID CLSID_PREVPEHANDLER = CLSID_NULL;	// Will be initialized by 'Initialize_StaticVariables()'
+INIT_ONCE InitOnce = INIT_ONCE_STATIC_INIT;
+
+static BOOL WINAPI Initialize_StaticVariables(PINIT_ONCE InitOnce,
+											  PVOID Parameter,
+											  PVOID *Context)
 {
-	{ PKEY_Comment, &PropertyExtension::GetCommentProperty }
-};
+	// Get previous previous handler's CLSID from registry,
+	//	convert it to 'CLSID' structure and store it in static
+	//	global variable 'CLSID_PREVPEHANDLER'
+
+	// Read previous property handler's CLSID from registry
+	static const LPCWSTR REGISTRY_PREVIOUS_PE_HANDLER_KEY = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\PropertySystem\\PropertyHandlers\\.exe";
+	static const LPCWSTR REGISTRY_PREVIOUS_PE_HANDLER_VALUE = L"PreviousHandler";
+
+	HKEY hkeyPreviousPEHandler;
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REGISTRY_PREVIOUS_PE_HANDLER_KEY, 0, KEY_READ, &hkeyPreviousPEHandler) != ERROR_SUCCESS)
+		return TRUE;
+
+	DWORD cbValueSize;
+	if (RegGetValue(hkeyPreviousPEHandler, NULL, REGISTRY_PREVIOUS_PE_HANDLER_VALUE, RRF_RT_REG_SZ, NULL, NULL, &cbValueSize) != ERROR_SUCCESS)
+	{
+		RegCloseKey(hkeyPreviousPEHandler);
+		return TRUE;
+	}
+
+	unique_ptr<WCHAR> szPrevHandlerCLSID(new (nothrow) WCHAR[cbValueSize / sizeof(WCHAR)]);
+	if (szPrevHandlerCLSID.get() == NULL)
+	{
+		RegCloseKey(hkeyPreviousPEHandler);
+		return FALSE;	// Let another thread try initializing again when there is memory
+	}
+
+	if (RegGetValue(hkeyPreviousPEHandler, NULL, REGISTRY_PREVIOUS_PE_HANDLER_VALUE, RRF_RT_REG_SZ, NULL, szPrevHandlerCLSID.get(), &cbValueSize) != ERROR_SUCCESS)
+	{
+		RegCloseKey(hkeyPreviousPEHandler);
+		return TRUE;
+	}
+
+	if (cbValueSize == 0)				// Installer might not have correctly set this value
+	{
+		RegCloseKey(hkeyPreviousPEHandler);
+		return TRUE;
+	}
+
+	RegCloseKey(hkeyPreviousPEHandler);	// Gracefully close register key handle
+
+	CLSIDFromString(szPrevHandlerCLSID.get(), &CLSID_PREVPEHANDLER);	// String CLSID to structure CLSID
+
+	return TRUE;
+}
 
 
 PropertyExtension::PropertyExtension()
 : m_Ref(1)
 {
 	// Initialize COM
-	m_bCOMInitialized = SUCCEEDED(CoInitialize(NULL));
+	m_bCOMInitialized = SUCCEEDED(CoInitialize(NULL));	// 'm_bCOMInitialized' will be used in 'Initialize()'
+	if (!m_bCOMInitialized)
+		return;
+
+	// Initialize static variable whose values are not integral
+	InitOnceExecuteOnce(&InitOnce, &Initialize_StaticVariables, NULL, NULL);
 }
 
 PropertyExtension::~PropertyExtension()
 {
 	// Anything that is created must be destroyed
 	// Laws of Universe 101
-	CoUninitialize();
+	if (m_bCOMInitialized)
+		CoUninitialize();
 }
+
+const PropertyExtension::KEY_FUNCVALUE PropertyExtension::m_KeyfuncValue[NUM_OF_ADDED_PROPERTIES] =
+{
+	{ PKEY_Comment, &PropertyExtension::GetCommentProperty }
+};
 
 wstring PropertyExtension::GetCommentProperty()
 {
@@ -110,7 +167,7 @@ IFACEMETHODIMP PropertyExtension::QueryInterface(REFIID riid, void **ppv)
 	return QISearch(this, qit, riid, ppv);
 }
 
-IFACEMETHODIMP_(ULONG)	PropertyExtension::AddRef()
+IFACEMETHODIMP_(ULONG) PropertyExtension::AddRef()
 {
 	return InterlockedIncrement(&m_Ref);
 }
@@ -148,11 +205,14 @@ IFACEMETHODIMP PropertyExtension::GetAt(DWORD iProp, PROPERTYKEY *pkey)
 		// Our added properties keys are being requested
 		//	so we need to handle this
 		*pkey = m_KeyfuncValue[iProp - (m_cSupportedProperties - NUM_OF_ADDED_PROPERTIES)].key;
+
+		return S_OK;
 	}
 	else
-		return m_interfacePropertyStore->GetAt(iProp, pkey);	// Otherwise, let previous handler take care of it
+		if (m_bPreviousHandlerInitialized)
+			return m_interfacePropertyStore->GetAt(iProp, pkey);	// Otherwise, let previous handler take care of it
 
-	return S_OK;
+	return E_NOTIMPL;
 }
 
 IFACEMETHODIMP PropertyExtension::GetValue(REFPROPERTYKEY key, PROPVARIANT *pv)
@@ -168,39 +228,42 @@ IFACEMETHODIMP PropertyExtension::GetValue(REFPROPERTYKEY key, PROPVARIANT *pv)
 			//	by calling appropriate function and saving the
 			//	returned string to 'pv'
 			InitPropVariantFromString((this->*m_KeyfuncValue[i].funcValue)().c_str(), pv);
+
 			return S_OK;
 		}
 
-	if (!IsSourcePEFormat())		// If source file is not EXE/DLL, then we don't have
-	{								//	previous handlers to fall back to
-		// Return empty as stated by documentation
-		pv->vt = VT_EMPTY;
-		return S_OK;
-	}
+	// None of the added property keys match so give it to the previous handler if
+	//	source file is in PE format
+	if (IsSourcePEFormat() &&
+		m_bPreviousHandlerInitialized)
+		return m_interfacePropertyStore->GetValue(key, pv);
+	
+	// Else
+	// Return empty as stated by documentation
+	pv->vt = VT_EMPTY;
 
-	// None of the added property's keys match so give it to the previous handler
-	return m_interfacePropertyStore->GetValue(key, pv);
+	return S_OK;
 }
 
 IFACEMETHODIMP PropertyExtension::SetValue(REFPROPERTYKEY key, REFPROPVARIANT propvar)
 {
-	if (!IsSourcePEFormat())		// If source file is not EXE/DLL, then we don't have
-		return STG_E_ACCESSDENIED;	//	previous handlers to fall back to
-
 	if (IsAddedProperty(key))
-		return STG_E_ACCESSDENIED;	// If its added properties, writing is not supported
+		return STG_E_ACCESSDENIED;	// If it's added properties, writing is not supported
 
 	// Else previous handler will handle it
-	return m_interfacePropertyStore->SetValue(key, propvar);
+	if (m_bPreviousHandlerInitialized)
+		return m_interfacePropertyStore->SetValue(key, propvar);
+
+	return E_NOTIMPL;
 }
 
 IFACEMETHODIMP PropertyExtension::Commit(void)
 {
-	if (!IsSourcePEFormat())		// If source file is not EXE/DLL, then we don't have
-		return STG_E_ACCESSDENIED;	//	previous handlers to fall back to
-
 	// Whatever previous handler returns
-	return m_interfacePropertyStore->Commit();
+	if (m_bPreviousHandlerInitialized)
+		return m_interfacePropertyStore->Commit();
+
+	return E_NOTIMPL;
 }
 
 
@@ -254,10 +317,6 @@ IFACEMETHODIMP PropertyExtension::Initialize(LPCWSTR pszFilePath, DWORD grfMode)
 	else
 		return E_NOTIMPL;
 
-	// 'NUM_OF_ADDED_PROPERTIES' are common to all type that we support
-	//	NOTE: For PE type (i.e. EXE/DLL this variable may change later)
-	m_cSupportedProperties = NUM_OF_ADDED_PROPERTIES;
-
 	// According to the format, read data
 	ULONG cbRead = 0;
 	LARGE_INTEGER pos = { 0 };
@@ -269,80 +328,8 @@ IFACEMETHODIMP PropertyExtension::Initialize(LPCWSTR pszFilePath, DWORD grfMode)
 		case EXE:
 		case DLL:
 		{
-			// Let the previous property handler initialize
-			// Read previous property handler's CLSID from registry
-			static const LPCWSTR REGISTY_PREVIOUS_PE_HANDLER_KEY = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\PropertySystem\\PropertyHandlers\\.exe";
-			static const LPCWSTR REGISTY_PREVIOUS_PE_HANDLER_VALUE = L"PreviousHandler";
+			m_cSupportedProperties = NUM_OF_ADDED_PROPERTIES;
 
-			HKEY hkeyPreviousPEHandler;
-			if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REGISTY_PREVIOUS_PE_HANDLER_KEY, 0, KEY_READ, &hkeyPreviousPEHandler) != ERROR_SUCCESS)
-				return E_UNEXPECTED;
-
-			DWORD cbValueSize;
-			if (RegGetValue(hkeyPreviousPEHandler, NULL, REGISTY_PREVIOUS_PE_HANDLER_VALUE, RRF_RT_REG_SZ, NULL, NULL, &cbValueSize) != ERROR_SUCCESS)
-			{
-				RegCloseKey(hkeyPreviousPEHandler);
-				return E_UNEXPECTED;
-			}
-
-			unique_ptr<wchar_t> szPrevHandlerCLSID(new (nothrow) wchar_t[cbValueSize / sizeof(wchar_t)]);
-			if (szPrevHandlerCLSID.get() == NULL)
-			{
-				RegCloseKey(hkeyPreviousPEHandler);
-				return E_OUTOFMEMORY;
-			}
-
-			if (RegGetValue(hkeyPreviousPEHandler, NULL, REGISTY_PREVIOUS_PE_HANDLER_VALUE, RRF_RT_REG_SZ, NULL, szPrevHandlerCLSID.get(), &cbValueSize) != ERROR_SUCCESS)
-			{
-				RegCloseKey(hkeyPreviousPEHandler);
-				return E_UNEXPECTED;
-			}
-
-			if (cbValueSize == 0)				// Installer might not have correctly set this value
-			{
-				RegCloseKey(hkeyPreviousPEHandler);
-				return E_UNEXPECTED;
-			}
-
-			RegCloseKey(hkeyPreviousPEHandler);	// Gracefully close register key handle
-
-			CLSID clsidPrevPEHandler;
-			if (FAILED(CLSIDFromString(szPrevHandlerCLSID.get(), &clsidPrevPEHandler)))		// String CLSID to structure CLSID
-				return E_UNEXPECTED;
-
-			// Get instance of class factory of previous handler
-			CComPtr<IUnknown> interfaceUnknown;
-			if (FAILED(CoCreateInstance(clsidPrevPEHandler, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&interfaceUnknown))))
-				return E_UNEXPECTED;
-
-			CComPtr<IInitializeWithFile> interfaceInitializeWithFile;
-			if (FAILED(interfaceUnknown->QueryInterface(IID_PPV_ARGS(&interfaceInitializeWithFile))))
-				return E_UNEXPECTED;
-
-			// Caller initializer function in previous handler
-			HRESULT hrPreviousHandlerInitialization = interfaceInitializeWithFile->Initialize(pszFilePath, grfMode);
-			if (FAILED(hrPreviousHandlerInitialization))
-				return hrPreviousHandlerInitialization;			// Seems like previous handler didn't like this 'grfMode', so we return the same value
-
-			// The following interface will be used in other functions
-			if (FAILED(interfaceUnknown->QueryInterface(IID_PPV_ARGS(&m_interfacePropertyStore))))
-				return E_UNEXPECTED;
-
-			if (FAILED(m_interfacePropertyStore->GetCount(&m_cSupportedProperties)))
-				return E_UNEXPECTED;
-
-			m_cSupportedProperties += NUM_OF_ADDED_PROPERTIES;		// Add no. of properties that we added
-
-			// We don't care if the following 'IPropertyStoreCapabilities' interface is not supported
-			//	NOTE: When testing in Windows 7, the following function failed
-			//	perhaps Windows 8 and future versions support this? Anyways, we do.
-			// Implementing this interface allows us to properly disable property editing
-			// by the user. With default property handler the comment section would appear
-			// editable but when user tries to save the comment, Explorer wrongly gave an
-			// access denied prompt. By implementing this, all this is avoided.
-			interfaceUnknown->QueryInterface(IID_PPV_ARGS(&m_interfacePropertyStoreCapabilities));
-
-			// Now we initialize
 			// Check MZ header			
 			READ(pStream, sizeof(WORD));
 			if (cast<WORD>(pData) != IMAGE_DOS_SIGNATURE)	// Check MSDOS signature
@@ -386,10 +373,7 @@ IFACEMETHODIMP PropertyExtension::Initialize(LPCWSTR pszFilePath, DWORD grfMode)
 
 					break;
 
-				case IMAGE_ROM_OPTIONAL_HDR_MAGIC:	// Who uses ROM PEs anyway?
-					return E_NOTIMPL;
-
-				default:
+				default:	// Who uses ROM PEs anyway?
 					m_Format = Invalid;
 					return S_OK;
 			}
@@ -421,7 +405,11 @@ IFACEMETHODIMP PropertyExtension::Initialize(LPCWSTR pszFilePath, DWORD grfMode)
 					return S_OK;
 			}
 
-			// Is this .NET image?
+			// NOTE: Previous property handler may fail if 'Resource Directory'
+			//	does not exist for this PE file. But we don't want to just fail
+			//	because of this. So, if this directory is empty don't bother
+			//	initializing previous handler and handle everything.
+
 			// First read no. of data directory
 			switch (m_ArchType)
 			{
@@ -431,7 +419,10 @@ IFACEMETHODIMP PropertyExtension::Initialize(LPCWSTR pszFilePath, DWORD grfMode)
 
 			SEEK(pStream, pos, STREAM_SEEK_CUR);
 			READ(pStream, sizeof(DWORD));
-			if (min(cast<DWORD>(pData), IMAGE_NUMBEROF_DIRECTORY_ENTRIES) < IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR + 1)
+			DWORD NumOfDataDirs = min(cast<DWORD>(pData), IMAGE_NUMBEROF_DIRECTORY_ENTRIES);
+
+			// Is this a .NET image?
+			if (NumOfDataDirs < IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR + 1)
 				m_bDotNet = false;
 			else
 			{
@@ -441,11 +432,57 @@ IFACEMETHODIMP PropertyExtension::Initialize(LPCWSTR pszFilePath, DWORD grfMode)
 				READ(pStream, sizeof(DWORD));
 				m_bDotNet = cast<DWORD>(pData) != 0;
 			}
+
+			m_bPreviousHandlerInitialized = false;	// Will change after successful initialization
+
+			if (CLSID_PREVPEHANDLER == CLSID_NULL)
+				break;
+
+			// Let the previous property handler initialize
+			// Get instance of class factory of previous handler
+			CComPtr<IUnknown> interfaceUnknown;
+			if (FAILED(CoCreateInstance(CLSID_PREVPEHANDLER, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&interfaceUnknown))))
+				break;
+
+			CComPtr<IInitializeWithFile> interfaceInitializeWithFile;
+			if (FAILED(interfaceUnknown->QueryInterface(IID_PPV_ARGS(&interfaceInitializeWithFile))))
+				break;
+
+			// Caller initializer function in previous handler
+			HRESULT hrPreviousHandlerInitialization = interfaceInitializeWithFile->Initialize(pszFilePath, grfMode);
+			if (hrPreviousHandlerInitialization == STG_E_ACCESSDENIED)
+				return hrPreviousHandlerInitialization;				// Seems like previous handler didn't like this 'grfMode', so we return the same value
+			else if (FAILED(hrPreviousHandlerInitialization))
+				break;
+
+			// The following interfaces will be used in other functions
+			if (FAILED(interfaceUnknown->QueryInterface(IID_PPV_ARGS(&m_interfacePropertyStore))))
+				break;
+
+			// We don't care if the following 'IPropertyStoreCapabilities' interface is not supported
+			//	NOTE: When testing in Windows 7, the following function failed
+			//	perhaps Windows 8 and future versions support this? Anyways, we do.
+			// Implementing this interface allows us to properly disable property editing
+			// by the user. With default property handler the comment section would appear
+			// editable but when user tries to save the comment, Explorer wrongly gave an
+			// access denied prompt. By implementing this, all this is avoided.
+			interfaceUnknown->QueryInterface(IID_PPV_ARGS(&m_interfacePropertyStoreCapabilities));
+
+			DWORD cPreviousHandlerProperties;
+			if (FAILED(m_interfacePropertyStore->GetCount(&cPreviousHandlerProperties)))
+				break;
+
+			m_cSupportedProperties += cPreviousHandlerProperties;	// Add no. of properties that we added
+
+			// Successfully initialized previous handler
+			m_bPreviousHandlerInitialized = true;
 		}
-			
+		
 		break;
 
 		case OBJ:
+			m_cSupportedProperties = NUM_OF_ADDED_PROPERTIES;
+
 			// Check machine type
 			READ(pStream, sizeof(WORD));
 			switch (cast<WORD>(pData))
@@ -459,6 +496,8 @@ IFACEMETHODIMP PropertyExtension::Initialize(LPCWSTR pszFilePath, DWORD grfMode)
 			break;
 		
 		case LIB:
+			m_cSupportedProperties = NUM_OF_ADDED_PROPERTIES;
+
 			// Check signature '!<arch>/n'
 			READ(pStream, IMAGE_ARCHIVE_START_SIZE);
 			if (string(cast<char *>(pData), IMAGE_ARCHIVE_START_SIZE) != IMAGE_ARCHIVE_START)
@@ -525,13 +564,13 @@ IFACEMETHODIMP PropertyExtension::Initialize(LPCWSTR pszFilePath, DWORD grfMode)
 // IPropertyStoreCapabilities
 IFACEMETHODIMP PropertyExtension::IsPropertyWritable(REFPROPERTYKEY key)
 {
-	if (!IsSourcePEFormat())		// If source file is not EXE/DLL, then we don't have
-		return S_FALSE;				//	previous handlers to fall back to
-
 	if (IsAddedProperty(key) ||
 		m_interfacePropertyStoreCapabilities == NULL)	// This interface might not be implemented
 		return S_FALSE;		// None of the properties for the file types that we support are writable
 
 	// Else previous handler will handle it
-	return m_interfacePropertyStoreCapabilities->IsPropertyWritable(key);
+	if (m_bPreviousHandlerInitialized)
+		return m_interfacePropertyStoreCapabilities->IsPropertyWritable(key);
+
+	return E_NOTIMPL;
 }

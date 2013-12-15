@@ -35,6 +35,7 @@ private:
 	bool m_bCOMInitialized = false;		// If call to 'CoInitialize()' failed in constructor, there's no going any further
 	bool m_bAlreadyInitialized = false;	// To prevent multiple initialization call to 'IInitializeWithFile::Initialize()'
 	long m_Ref = 0;						// Reference count for this object
+	bool m_bPreviousHandlerInitialized;	// There is version data in the 'Resource Directory' of PE
 	bool m_bDotNet = false;				// Are we dealing with a .NET Portable Executable?
 	Format m_Format;
 	ArchType m_ArchType;

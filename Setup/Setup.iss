@@ -1,11 +1,12 @@
 ; Script for installing 'MantaPropertyExtension'
 
 #define AppName         "Manta Property Extension"
-;#define AppVersion      1.0
+#define AppVersion      "1.0"
 #define AppPublisher    "Sanjeev Sharma"
 #define AppURL          "http://sanje2v.wordpress.com/"
+#define AppSupportURL   "http://sanje2v.wordpress.com/2013/12/10/writing-property-handler-for-windows-explorermanta-property-extension/"
 #define AppComments     "Installer for Manta Property Extension v1.0"
-#define COM_CLSID       "{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}}"
+#define COM_CLSID       "{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
 ;#define DEBUG
 
 ;#define X86
@@ -17,11 +18,11 @@
 [Setup]
 AppId={{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}}
 AppName={#AppName}
-AppVersion=1.0
+AppVersion={#AppVersion}
 VersionInfoVersion=1.0.0.0
 AppPublisher={#AppPublisher}
 AppPublisherURL={#AppURL}
-AppSupportURL={#AppURL}
+AppSupportURL={#AppSupportURL}
 AppComments={#AppComments}
 CreateAppDir=no
 Compression=lzma
@@ -73,7 +74,7 @@ Source:"C:\Users\Sanjeev\Documents\Visual Studio 2013\Projects\MantaPropertyExte
 [Registry]
 ; For .exe
 Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.exe";
-Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.exe"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"; Check:BackupPreviousHandler('SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.exe')
+Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.exe"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"; Check:BackupPreviousHandler('SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.exe')
 
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.exe"
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.exe"; Flags:createvalueifdoesntexist; ValueType:string; ValueName:"InfoTip"; ValueData:"prop:System.Comment;System.FileDescription;System.Company;System.FileVersion;System.DateCreated;System.Size"
@@ -81,7 +82,7 @@ Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.exe"; Flags:create
 
 ; For .dll
 Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.dll";
-Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.dll"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
+Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.dll"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"
 
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.dll"
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.dll"; Flags:createvalueifdoesntexist; ValueType:string; ValueName:"InfoTip"; ValueData:"prop:System.Comment;System.FileDescription;System.Company;System.FileVersion;System.DateCreated;System.Size"
@@ -89,7 +90,7 @@ Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.dll"; Flags:create
 
 ; For .obj
 Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.obj"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.obj"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
+Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.obj"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"
 
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.obj"
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.obj"; Flags:createvalueifdoesntexist deletevalue; ValueType:string; ValueName:"InfoTip"; ValueData:"prop:System.Comment;System.FileDescription;System.Company;System.FileVersion;System.DateCreated;System.Size"
@@ -97,7 +98,7 @@ Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.obj"; Flags:create
 
 ; For .o
 Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.o"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.o"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
+Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.o"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"
 
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.o"
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.o"; Flags:createvalueifdoesntexist deletevalue; ValueType:string; ValueName:"InfoTip"; ValueData:"prop:System.Comment;System.FileDescription;System.Company;System.FileVersion;System.DateCreated;System.Size"
@@ -105,7 +106,7 @@ Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.o"; Flags:createva
 
 ; For .lib
 Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.lib"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.lib"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
+Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.lib"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"
 
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.lib"
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.lib"; Flags:createvalueifdoesntexist deletevalue; ValueType:string; ValueName:"InfoTip"; ValueData:"prop:System.Comment;System.FileDescription;System.Company;System.FileVersion;System.DateCreated;System.Size"
@@ -113,7 +114,7 @@ Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.lib"; Flags:create
 
 ; For .a
 Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.a"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.a"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
+Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.a"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"
 
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.a"
 Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.a"; Flags:createvalueifdoesntexist; ValueType:string; ValueName:"InfoTip"; ValueData:"prop:System.Comment;System.FileDescription;System.Company;System.FileVersion;System.DateCreated;System.Size"
@@ -122,27 +123,27 @@ Root: HKLM; Subkey: "SOFTWARE\Classes\SystemFileAssociations\.a"; Flags:createva
 #ifdef X64
 ; For .exe
 Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.exe";
-Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.exe"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"; Check:BackupPreviousHandler('SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.exe')
+Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.exe"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"; Check:BackupPreviousHandler('SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.exe')
 
 ; For .dll
 Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.dll";
-Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.dll"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
+Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.dll"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"
 
 ; For .obj
 Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.obj"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.obj"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
+Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.obj"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"
 
 ; For .o
 Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.o"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.o"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
+Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.o"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"
 
 ; For .lib
 Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.lib"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.lib"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
+Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.lib"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"
 
 ; For .a
 Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.a"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.a"; ValueType:string; ValueName:""; ValueData:"{{4CC940B1-AB1B-40AA-99E3-B974FD2B0EC4}"
+Root: HKLM; Subkey: "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.a"; ValueType:string; ValueName:""; ValueData:"{#COM_CLSID}"
 
 #endif
 
@@ -173,22 +174,21 @@ begin
     (* For 64-bit Windows, we need both x86 and x64 versions *)
     if not RegValueExists(HKLM, 'SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64', 'Installed') then begin
         Result := false;
-        MsgBox('Installation of both 32-bit & 64-bit Visual C++ 2013 dlls are required. Downloading the setups now. Please install them and try running this setup again.', mbInformation, MB_OK);
-        ShellExec('open', 'http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x64.exe','','',SW_SHOWNORMAL, ewNoWait, ErrorCode);
+        MsgBox('Installation of both 32-bit & 64-bit Visual C++ 2013 dlls are required. Redirecting your browser to the download site. Please install them and try running this setup again.', mbInformation, MB_OK);
+        ShellExec('open', 'http://www.microsoft.com/en-au/download/details.aspx?id=40784', '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
     end
 
     if not RegValueExists(HKLM, 'SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86', 'Installed') then begin
         Result := false;
         MsgBox('Installation of 32-bit Visual C++ 2013 dlls are required. Downloading the setup now. Please install them and try running this setup again.', mbInformation, MB_OK);
-        ShellExec('open', 'http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe','','',SW_SHOWNORMAL, ewNoWait, ErrorCode);
+        ShellExec('open', 'http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe', '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
     end 
   end else
     if not RegValueExists(HKLM, 'SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86', 'Installed') then begin
         Result := false;
         MsgBox('Installation of 32-bit Visual C++ 2013 dlls are required. Downloading the setup now. Please install them and try running this setup again.', mbInformation, MB_OK);
-        ShellExec('open', 'http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe','','',SW_SHOWNORMAL, ewNoWait, ErrorCode);
+        ShellExec('open', 'http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe', '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
     end
-
 end;
 
 function BackupPreviousHandler(EXEKey : String) : Boolean;
@@ -204,7 +204,7 @@ begin
 
   RegQueryStringValue(HKLM, EXEKey, '', PrevHandlerCLSID);
   if (PrevHandlerCLSID = '') then begin
-    Msgbox('No previous property handler for .exe file was found. This is not right. Please uninstall this product', mbCriticalError, MB_OK);
+    Msgbox('No previous property handler for .exe file was found. This is not right. Please uninstall this product.', mbCriticalError, MB_OK);
   end else
     if not RegWriteStringValue(HKLM, EXEKey, 'PreviousHandler', PrevHandlerCLSID) then begin
       Msgbox('Failed to backup previous .exe file property handler. Continuing.', mbInformation, MB_OK);
@@ -214,7 +214,7 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then begin
-    Msgbox('Windows Explorer and/or Windows Search service will need to be restarted for this extension to take over. Either restart them manually or restart your computer.', mbInformation, MB_OK);
+    Msgbox('Windows Explorer has been asked to reload its settings but in some instances a restart may be required before this extension is used.', mbInformation, MB_OK);
   end
 end;
 
