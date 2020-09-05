@@ -52,20 +52,20 @@ Name:"english"; MessagesFile:"compiler:Default.isl"
 #ifdef X86
 
 #ifdef DEBUG
-Source:"C:\Users\Sanjeev\Documents\Visual Studio 2013\Projects\MantaPropertyExtension\Debug\MantaPropertyExtension.dll";DestDir:"{sys}";Flags:regserver
+Source:"C:\Users\Sanjeev\source\repos\MantaPropertyExtension\Debug\MantaPropertyExtension.dll";DestDir:"{sys}";Flags:regserver
 #else
-Source:"C:\Users\Sanjeev\Documents\Visual Studio 2013\Projects\MantaPropertyExtension\Release\MantaPropertyExtension.dll";DestDir:"{sys}";Flags:regserver
+Source:"C:\Users\Sanjeev\source\repos\MantaPropertyExtension\Release\MantaPropertyExtension.dll";DestDir:"{sys}";Flags:regserver
 #endif
 
 #else
 ; X64
 
 #ifdef DEBUG
-Source:"C:\Users\Sanjeev\Documents\Visual Studio 2013\Projects\MantaPropertyExtension\x64\Debug\MantaPropertyExtension.dll";DestDir:"{sys}";Flags:regserver
-Source:"C:\Users\Sanjeev\Documents\Visual Studio 2013\Projects\MantaPropertyExtension\Debug\MantaPropertyExtension.dll";DestDir:"{syswow64}";Flags:regserver
+Source:"C:\Users\Sanjeev\source\repos\MantaPropertyExtension\x64\Debug\MantaPropertyExtension.dll";DestDir:"{sys}";Flags:regserver
+Source:"C:\Users\Sanjeev\source\repos\MantaPropertyExtension\Debug\MantaPropertyExtension.dll";DestDir:"{syswow64}";Flags:regserver
 #else
-Source:"C:\Users\Sanjeev\Documents\Visual Studio 2013\Projects\MantaPropertyExtension\x64\Release\MantaPropertyExtension.dll";DestDir:"{sys}";Flags:regserver
-Source:"C:\Users\Sanjeev\Documents\Visual Studio 2013\Projects\MantaPropertyExtension\Release\MantaPropertyExtension.dll";DestDir:"{syswow64}";Flags:regserver
+Source:"C:\Users\Sanjeev\source\repos\MantaPropertyExtension\x64\Release\MantaPropertyExtension.dll";DestDir:"{sys}";Flags:regserver
+Source:"C:\Users\Sanjeev\source\repos\MantaPropertyExtension\Release\MantaPropertyExtension.dll";DestDir:"{syswow64}";Flags:regserver
 #endif
 
 #endif
@@ -176,7 +176,7 @@ begin
         Result := false;
         MsgBox('Installation of both 32-bit & 64-bit Visual C++ 2013 dlls are required. Redirecting your browser to the download site. Please install them and try running this setup again.', mbInformation, MB_OK);
         ShellExec('open', 'http://www.microsoft.com/en-au/download/details.aspx?id=40784', '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
-    end
+    end;
 
     if not RegValueExists(HKLM, 'SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86', 'Installed') then begin
         Result := false;
